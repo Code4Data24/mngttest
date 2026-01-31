@@ -12,10 +12,16 @@ const syncUserCreation = inngest.createFunction(
   async ({ event }) => {
     const { data } = event;
 
-    await prisma.user.create({
-      data: {
+    await prisma.user.upsert({
+      where: { id: data.id },
+      update: {
+        email: data?.email_addresses[0]?.email_address ?? null,
+        name: `${data?.first_name ?? ""} ${data?.last_name ?? ""}`.trim(),
+        image: data?.image_url ?? "",
+      },
+      create: {
         id: data.id,
-        email: data?.email_addresses[0]?.email_address,
+        email: data?.email_addresses[0]?.email_address ?? null,
         name: `${data?.first_name ?? ""} ${data?.last_name ?? ""}`.trim(),
         image: data?.image_url ?? "",
       },
@@ -23,11 +29,17 @@ const syncUserCreation = inngest.createFunction(
   }
 );
 
+
+
+
 const syncUserDeletion = inngest.createFunction(
   { id: "delete-user-with-clerk" },
   { event: "clerk/user.deleted" },
   async ({ event }) => {
-    await prisma.user.delete({ where: { id: event.data.id } });
+    await prisma.user.deleteMany({
+      where: { id: event.data.id },
+    });
+
   }
 );
 
@@ -37,16 +49,25 @@ const syncUserUpdation = inngest.createFunction(
   async ({ event }) => {
     const { data } = event;
 
-    await prisma.user.update({
+    await prisma.user.upsert({
       where: { id: data.id },
-      data: {
-        email: data?.email_addresses[0]?.email_address,
+      update: {
+        email: data?.email_addresses[0]?.email_address ?? null,
+        name: `${data?.first_name ?? ""} ${data?.last_name ?? ""}`.trim(),
+        image: data?.image_url ?? "",
+      },
+      create: {
+        id: data.id,
+        email: data?.email_addresses[0]?.email_address ?? null,
         name: `${data?.first_name ?? ""} ${data?.last_name ?? ""}`.trim(),
         image: data?.image_url ?? "",
       },
     });
+
   }
 );
+
+
 
 
 
@@ -55,6 +76,16 @@ const createDefaultWorkspace = inngest.createFunction(
   { event: "clerk/organization.created" },
   async ({ event }) => {
     const org = event.data;
+    await prisma.user.upsert({
+      where: { id: org.created_by },
+      update: {},
+      create: {
+        id: org.created_by,
+        email: null,
+        name: "Pending User",
+        image: "",
+      },
+    });
 
     const existing = await prisma.workspace.findFirst({
       where: { organizationId: org.id },
@@ -63,23 +94,26 @@ const createDefaultWorkspace = inngest.createFunction(
 
     if (existing) return;
 
-    const workspace = await prisma.workspace.create({
-      data: {
-        organizationId: org.id,
-        name: `${org.name} Workspace`,
-        slug: `${org.slug}-default`,
-        ownerId: org.created_by,
-        image_url: org.image_url ?? "",
-      },
+    await prisma.$transaction(async (tx) => {
+      const workspace = await tx.workspace.create({
+        data: {
+          organizationId: org.id,
+          name: `${org.name} Workspace`,
+          slug: `${org.slug}-default-${org.id.slice(0, 6)}`,
+          ownerId: org.created_by,
+          image_url: org.image_url ?? "",
+        },
+      });
+
+      await tx.workspaceMember.create({
+        data: {
+          userId: org.created_by,
+          workspaceId: workspace.id,
+          role: "OWNER",
+        },
+      });
     });
 
-    await prisma.workspaceMember.create({
-      data: {
-        userId: org.created_by,
-        workspaceId: workspace.id,
-        role: "OWNER",
-      },
-    });
   }
 );
 
@@ -133,12 +167,64 @@ const sendBookingConfirmationEmail = inngest.createFunction(
 );
 
 
+const autoAddOrgMemberToDefaultWorkspace = inngest.createFunction(
+  { id: "auto-add-org-member-to-default-workspace" },
+  { event: "clerk/organizationInvitation.accepted" },
+  async ({ event }) => {
+    const data = event.data;
+
+    // 1. Ensure user exists
+    await prisma.user.upsert({
+      where: { id: data.user_id },
+      update: {},
+      create: {
+        id: data.user_id,
+        email: data.email_address ?? null,
+        name: "Pending User",
+        image: "",
+      },
+    });
+
+    // 2. Find default workspace for org
+    const workspace = await prisma.workspace.findFirst({
+      where: { organizationId: data.organization_id },
+    });
+
+    if (!workspace) return; // safety
+
+    // 3. Idempotency check
+    const exists = await prisma.workspaceMember.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId: data.user_id,
+          workspaceId: workspace.id,
+        },
+      },
+    });
+
+    if (exists) return;
+
+    // 4. Add as MEMBER
+    await prisma.workspaceMember.create({
+      data: {
+        userId: data.user_id,
+        workspaceId: workspace.id,
+        role: "MEMBER",
+      },
+    });
+  }
+);
+
+
+
 
 export const functions = [
   syncUserCreation,
   syncUserDeletion,
   syncUserUpdation,
   createDefaultWorkspace,
+  autoAddOrgMemberToDefaultWorkspace,
   deleteOrgWorkspaces,
   sendBookingConfirmationEmail,
 ];
+

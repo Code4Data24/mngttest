@@ -1,28 +1,52 @@
 import prisma from "../configs/prisma.js";
 
-// Get all workspaces for user
 export const getUserWorkspaces = async (req, res) => {
-    try {
+  try {
+    const userId = req.userId;
+    const orgId = req.orgId;
 
-        const { userId } = await req.auth();
-        const workspaces = await prisma.workspace.findMany({
-            where: {
-                members: { some: { userId: userId } }
-            },
-            include: {
-                members: { include: { user: true } },
-                projects: {
-                    include: {
-                        tasks: { include: { assignee: true, comments: { include: { user: true } } } },
-                        members: { include: { user: true } }
-                    }
-                },
-                owner: true
-            }
-        });
-        res.json({ workspaces });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ message: error.code || error.message });
+   
+    const userExists = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+
+    if (!userExists) {
+      await prisma.user.create({
+        data: {
+          id: userId,
+          email: null,
+          name: "Pending User",
+          image: "",
+        },
+      });
     }
+
+    const workspaces = await prisma.workspace.findMany({
+      where: {
+        organizationId: orgId,
+        members: { some: { userId } },
+      },
+      include: {
+        members: { include: { user: true } },
+        projects: {
+          include: {
+            tasks: {
+              include: {
+                assignee: true,
+                comments: { include: { user: true } },
+              },
+            },
+            members: { include: { user: true } },
+          },
+        },
+        owner: true,
+      },
+    });
+
+    res.json({ workspaces });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.code || error.message });
+  }
 };
