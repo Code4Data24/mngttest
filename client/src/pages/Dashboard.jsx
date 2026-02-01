@@ -5,14 +5,22 @@ import { useUser } from '@clerk/clerk-react'
 import StatsGrid from '../components/StatsGrid'
 import ProjectOverview from '../components/ProjectOverview'
 import RecentActivity from '../components/RecentActivity'
+import { useParams } from 'react-router-dom'
 import TasksSummary from '../components/TasksSummary'
 import CreateProjectDialog from '../components/CreateProjectDialog'
+import { useSelector } from 'react-redux'
+import { selectActiveWorkspace } from '../features/workspaceSlice'
+
 
 const Dashboard = () => {
+    const { workspaceId } = useParams()
 
     const { user } = useUser()
     const [isDialogOpen, setIsDialogOpen] = useState(false)
-
+    const activeWorkspace = useSelector(selectActiveWorkspace)
+    if (!activeWorkspace || activeWorkspace.id !== workspaceId) {
+        return null
+    }
     return (
         <div className='max-w-6xl mx-auto'>
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 ">
@@ -25,18 +33,23 @@ const Dashboard = () => {
                     <Plus size={16} /> New Project
                 </button>
 
-                <CreateProjectDialog isDialogOpen={isDialogOpen} setIsDialogOpen={setIsDialogOpen} />
+                <CreateProjectDialog
+                    workspaceId={workspaceId}
+                    isDialogOpen={isDialogOpen}
+                    setIsDialogOpen={setIsDialogOpen}
+                />
+
             </div>
 
-            <StatsGrid />
+            <StatsGrid workspaceId={workspaceId} />
 
             <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-8">
-                    <ProjectOverview />
-                    <RecentActivity />
+                    <ProjectOverview workspaceId={workspaceId} />
+                    <RecentActivity workspaceId={workspaceId} />
                 </div>
                 <div>
-                    <TasksSummary />
+                    <TasksSummary workspaceId={workspaceId} />
                 </div>
             </div>
         </div>

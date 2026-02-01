@@ -61,6 +61,7 @@ const workspaceSlice = createSlice({
         state.workspaces = action.payload;
         state.loading = false;
         state.initialized = true;
+        state.error = null;
 
         if (action.payload.length > 0) {
          
