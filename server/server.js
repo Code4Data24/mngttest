@@ -40,10 +40,10 @@ app.use("/api/inngest", serve({ client: inngest, functions }));
 
 // Routes
 
-app.use("/api/workspaces", workspaceRouter);
-app.use("/api/workspaces/:workspaceId/projects", projectRouter);
-app.use("/api/workspaces/:workspaceId/tasks", taskRouter);
-app.use("/api/workspaces/:workspaceId/comments", commentRouter);
+app.use("/api/workspaces",requireAuthAndOrg, workspaceRouter);
+app.use("/api/workspaces/:workspaceId/projects", requireAuthAndOrg, projectRouter);
+app.use("/api/workspaces/:workspaceId/tasks", requireAuthAndOrg,taskRouter);
+app.use("/api/workspaces/:workspaceId/comments", requireAuthAndOrg, commentRouter);
 
 
 const PORT = process.env.PORT || 5000;

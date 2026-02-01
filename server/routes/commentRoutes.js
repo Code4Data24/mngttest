@@ -8,16 +8,16 @@ const commentRouter = express.Router({ mergeParams: true });
 
 commentRouter.get(
   "/:taskId",
-  requireAuthAndOrg,
   requireWorkspaceAccess(),
   getTaskComments
 );
+  
 
 commentRouter.post(
   "/:taskId",
-  requireAuthAndOrg,
   requireWorkspaceAccess(),
   addComment
 );
+  
 
 export default commentRouter;

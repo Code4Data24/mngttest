@@ -7,7 +7,7 @@ const workspaceRouter = express.Router();
 
 
 
-workspaceRouter.get("/", requireAuthAndOrg, getUserWorkspaces);
+workspaceRouter.get("/", getUserWorkspaces);
 
 
 export default workspaceRouter;

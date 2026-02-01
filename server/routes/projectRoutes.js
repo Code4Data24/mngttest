@@ -8,22 +8,22 @@ const projectRouter = express.Router({ mergeParams: true });
 
 projectRouter.post(
   "/",
-  requireAuthAndOrg,
   requireWorkspaceAccess({ roles: ["OWNER", "ADMIN"] }),
   createProject
 );
+  
 
 projectRouter.put(
   "/:projectId",
-  requireAuthAndOrg,
   requireWorkspaceAccess({ roles: ["OWNER", "ADMIN"] }),
   updateProject
 );
+ 
 
 projectRouter.post(
   "/:projectId/addMember",
-  requireAuthAndOrg,
   requireWorkspaceAccess({ roles: ["OWNER", "ADMIN"] }),
   addMember
 );
+  
 export default projectRouter;

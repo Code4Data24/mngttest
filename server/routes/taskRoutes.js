@@ -8,24 +8,24 @@ const taskRouter = express.Router({ mergeParams: true });
 
 taskRouter.post(
   "/:projectId",
-  requireAuthAndOrg,
   requireWorkspaceAccess(),
   createTask
 );
+ 
 
 taskRouter.put(
   "/:taskId",
-  requireAuthAndOrg,
   requireWorkspaceAccess(),
   updateTask
 );
+ 
 
 taskRouter.delete(
   "/:taskId",
-  requireAuthAndOrg,
   requireWorkspaceAccess(),
   deleteTask
 );
-
-
+  
 export default taskRouter;
+
+
