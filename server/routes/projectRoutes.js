@@ -4,7 +4,7 @@ import { requireAuthAndOrg } from "../middleware/authMiddleware.js";
 import { requireWorkspaceAccess } from "../middleware/workspaceMiddleware.js";
 
 
-const projectRouter = express.Router();
+const projectRouter = express.Router({ mergeParams: true });
 
 projectRouter.post(
   "/",
@@ -14,7 +14,7 @@ projectRouter.post(
 );
 
 projectRouter.put(
-  "/",
+  "/:projectId",
   requireAuthAndOrg,
   requireWorkspaceAccess({ roles: ["OWNER", "ADMIN"] }),
   updateProject
@@ -26,5 +26,4 @@ projectRouter.post(
   requireWorkspaceAccess({ roles: ["OWNER", "ADMIN"] }),
   addMember
 );
-
 export default projectRouter;

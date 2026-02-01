@@ -4,27 +4,27 @@ import { requireAuthAndOrg } from "../middleware/authMiddleware.js";
 import { requireWorkspaceAccess } from "../middleware/workspaceMiddleware.js";
 
 
-const taskRouter = express.Router();
+const taskRouter = express.Router({ mergeParams: true });
 
 taskRouter.post(
-    "/",
-    requireAuthAndOrg,
-    requireWorkspaceAccess(),
-    createTask
+  "/:projectId",
+  requireAuthAndOrg,
+  requireWorkspaceAccess(),
+  createTask
 );
 
 taskRouter.put(
-    "/:id",
-    requireAuthAndOrg,
-    requireWorkspaceAccess(),
-    updateTask
+  "/:taskId",
+  requireAuthAndOrg,
+  requireWorkspaceAccess(),
+  updateTask
 );
 
-taskRouter.post(
-    "/delete",
-    requireAuthAndOrg,
-    requireWorkspaceAccess(),
-    deleteTask
+taskRouter.delete(
+  "/:taskId",
+  requireAuthAndOrg,
+  requireWorkspaceAccess(),
+  deleteTask
 );
 
 

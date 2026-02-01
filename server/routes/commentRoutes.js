@@ -4,14 +4,7 @@ import { requireAuthAndOrg } from "../middleware/authMiddleware.js";
 import { requireWorkspaceAccess } from "../middleware/workspaceMiddleware.js";
 
 
-const commentRouter = express.Router();
-
-commentRouter.post(
-  "/",
-  requireAuthAndOrg,
-  requireWorkspaceAccess(),
-  addComment
-);
+const commentRouter = express.Router({ mergeParams: true });
 
 commentRouter.get(
   "/:taskId",
@@ -20,5 +13,11 @@ commentRouter.get(
   getTaskComments
 );
 
+commentRouter.post(
+  "/:taskId",
+  requireAuthAndOrg,
+  requireWorkspaceAccess(),
+  addComment
+);
 
 export default commentRouter;
