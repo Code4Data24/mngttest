@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeftIcon, PlusIcon, SettingsIcon, BarChart3Icon, CalendarIcon, FileStackIcon, ZapIcon } from "lucide-react";
 import ProjectAnalytics from "../components/ProjectAnalytics";
@@ -7,15 +7,24 @@ import ProjectSettings from "../components/ProjectSettings";
 import CreateTaskDialog from "../components/CreateTaskDialog";
 import ProjectCalendar from "../components/ProjectCalendar";
 import ProjectTasks from "../components/ProjectTasks";
+import { useParams } from "react-router-dom";
+import { selectActiveWorkspace } from "../features/workspaceSlice";
+import { useSelector } from "react-redux";
+import api from "../configs/api";
+import { useAuth } from "@clerk/clerk-react";
 
 export default function ProjectDetail() {
-
+    const { projectId } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
     const tab = searchParams.get('tab');
-    const id = searchParams.get('id');
+    const activeWorkspace = useSelector(selectActiveWorkspace);
+    const workspaceId = activeWorkspace?.id;
+    const { getToken } = useAuth();
+    if (!workspaceId) return null;
+
 
     const navigate = useNavigate();
-    const projects = useSelector((state) => state?.workspace?.currentWorkspace?.projects || []);
+
 
     const [project, setProject] = useState(null);
     const [tasks, setTasks] = useState([]);
@@ -27,12 +36,41 @@ export default function ProjectDetail() {
     }, [tab]);
 
     useEffect(() => {
-        if (projects && projects.length > 0) {
-            const proj = projects.find((p) => p.id === id);
-            setProject(proj);
-            setTasks(proj?.tasks || []);
+        if (!projectId || !workspaceId) return;
+
+        let isMounted = true;
+
+        async function fetchProject() {
+            try {
+                const token = await getToken();
+                const { data } = await api.get(
+                    `/api/workspaces/${workspaceId}/projects/${projectId}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                if (!isMounted) return;
+
+                setProject(data.project);
+                setTasks(data.project.tasks || []);
+            } catch (error) {
+                console.error("Failed to load project", error);
+                if (isMounted) {
+                    setProject(null);
+                }
+            }
         }
-    }, [id, projects]);
+
+        fetchProject();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [projectId, workspaceId, getToken]);
+
 
     const statusColors = {
         PLANNING: "bg-zinc-200 text-zinc-900 dark:bg-zinc-600 dark:text-zinc-200",
@@ -47,7 +85,7 @@ export default function ProjectDetail() {
             <div className="p-6 text-center text-zinc-900 dark:text-zinc-200">
                 <p className="text-3xl md:text-5xl mt-40 mb-10">Project not found</p>
                 <button
-                    onClick={() => navigate('/projects')}
+                    onClick={() => navigate(-1)}
                     className="mt-4 px-4 py-2 rounded bg-zinc-200 text-zinc-900 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-white dark:hover:bg-zinc-600"
                 >
                     Back to Projects
@@ -58,10 +96,10 @@ export default function ProjectDetail() {
 
     return (
         <div className="space-y-5 max-w-6xl mx-auto text-zinc-900 dark:text-white">
-            {/* Header */}
+
             <div className="flex max-md:flex-col gap-4 flex-wrap items-start justify-between max-w-6xl">
                 <div className="flex items-center gap-4">
-                    <button className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-400" onClick={() => navigate('/projects')}>
+                    <button className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-400" onClick={() => navigate(-1)}>
                         <ArrowLeftIcon className="w-4 h-4" />
                     </button>
                     <div className="flex items-center gap-3">
@@ -80,7 +118,7 @@ export default function ProjectDetail() {
                 </button>
             </div>
 
-            {/* Info Cards */}
+
             <div className="grid grid-cols-2 sm:flex flex-wrap gap-6">
                 {[
                     { label: "Total Tasks", value: tasks.length, color: "text-zinc-900 dark:text-white" },
@@ -98,7 +136,7 @@ export default function ProjectDetail() {
                 ))}
             </div>
 
-            {/* Tabs */}
+
             <div>
                 <div className="inline-flex flex-wrap max-sm:grid grid-cols-3 gap-2 border border-zinc-200 dark:border-zinc-800 rounded overflow-hidden">
                     {[
@@ -109,7 +147,7 @@ export default function ProjectDetail() {
                     ].map((tabItem) => (
                         <button
                             key={tabItem.key}
-                            onClick={() => { setActiveTab(tabItem.key); setSearchParams({ id: id, tab: tabItem.key }) }}
+                            onClick={() => { setActiveTab(tabItem.key); setSearchParams({ tab: tabItem.key }) }}
                             className={`flex items-center gap-2 px-4 py-2 text-sm transition-all ${activeTab === tabItem.key
                                 ? "bg-zinc-100 dark:bg-zinc-800/80"
                                 : "hover:bg-zinc-50 dark:hover:bg-zinc-700"
@@ -145,8 +183,8 @@ export default function ProjectDetail() {
                 </div>
             </div>
 
-            {/* Create Task Modal */}
-            {showCreateTask && <CreateTaskDialog showCreateTask={showCreateTask} setShowCreateTask={setShowCreateTask} projectId={id} />}
+
+            {showCreateTask && <CreateTaskDialog showCreateTask={showCreateTask} setShowCreateTask={setShowCreateTask} projectId={projectId} />}
         </div>
     );
 }

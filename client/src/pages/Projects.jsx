@@ -3,13 +3,18 @@ import { useSelector } from "react-redux";
 import { Plus, Search, FolderOpen } from "lucide-react";
 import ProjectCard from "../components/ProjectCard";
 import CreateProjectDialog from "../components/CreateProjectDialog";
+import { useParams } from "react-router-dom";
+import { selectActiveWorkspace } from "../features/workspaceSlice";
 
 export default function Projects() {
-    const projects = useSelector(state => {
-        const ws = state.workspace.currentWorkspace;
-        return ws ? ws.projects : null;
-    });
 
+    const { workspaceId } = useParams();
+    const activeWorkspace = useSelector(selectActiveWorkspace);
+    if (!activeWorkspace || activeWorkspace.id !== workspaceId) {
+        return null;
+    }
+
+    const projects = activeWorkspace?.projects ?? [];
     const safeProjects = projects ?? [];
 
     const [searchTerm, setSearchTerm] = useState("");
@@ -44,7 +49,7 @@ export default function Projects() {
 
     return (
         <div className="space-y-6 max-w-6xl mx-auto">
-            {/* Header */}
+
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                 <div>
                     <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-1">
@@ -63,12 +68,12 @@ export default function Projects() {
                 </button>
 
                 <CreateProjectDialog
+                    workspaceId={workspaceId}
                     isDialogOpen={isDialogOpen}
                     setIsDialogOpen={setIsDialogOpen}
                 />
             </div>
 
-            {/* Search and Filters */}
             <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative w-full max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -109,7 +114,6 @@ export default function Projects() {
                 </select>
             </div>
 
-            {/* Projects Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {!filteredProjects || filteredProjects.length === 0 ? (
 
@@ -133,10 +137,14 @@ export default function Projects() {
                     </div>
                 ) : (
                     filteredProjects.map(project => (
-                        <ProjectCard key={project.id} project={project} />
+                        <ProjectCard key={project.id} project={project} workspaceId={workspaceId} />
                     ))
                 )}
             </div>
         </div>
     );
 }
+
+
+
+

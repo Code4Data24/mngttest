@@ -53,8 +53,8 @@ export default function Settings() {
                             key={tab.key}
                             onClick={() => setActiveTab(tab.key)}
                             className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm ${activeTab === tab.key
-                                    ? "bg-gray-300 dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    : "text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white"
+                                ? "bg-gray-300 dark:bg-zinc-800 text-gray-900 dark:text-white"
+                                : "text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white"
                                 }`}
                         >
                             {tab.icon}
@@ -72,7 +72,9 @@ export default function Settings() {
                             <div>
                                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{user.fullName}</h3>
                                 <p className="text-gray-500 dark:text-zinc-400">{user?.emailAddresses[0].emailAddress}</p>
-                                <p className="text-sm text-gray-600 dark:text-zinc-500 capitalize">{user.role} Account</p>
+                                <p className="text-sm text-gray-600 dark:text-zinc-500">
+                                    Account Profile
+                                </p>
                             </div>
                         </div>
 
@@ -108,16 +110,18 @@ export default function Settings() {
                                 </p>
                             </div>
 
-                            {user.fullName !== profileData.fullName && (
-                                <button
-                                    type="submit"
-                                    disabled={isUpdating}
-                                    className="flex items-center text-sm gap-2 px-5 py-2 rounded bg-gradient-to-br from-blue-500 to-blue-600 text-white"
-                                >
-                                    <Save className="w-4 h-4" />
-                                    {isUpdating ? "Saving..." : "Save Changes"}
-                                </button>
-                            )}
+                            {(user.firstName !== profileData.firstName ||
+                                user.lastName !== profileData.lastName) && (
+
+                                    <button
+                                        type="submit"
+                                        disabled={isUpdating}
+                                        className="flex items-center text-sm gap-2 px-5 py-2 rounded bg-gradient-to-br from-blue-500 to-blue-600 text-white"
+                                    >
+                                        <Save className="w-4 h-4" />
+                                        {isUpdating ? "Saving..." : "Save Changes"}
+                                    </button>
+                                )}
                         </form>
                     </div>
                 )}
