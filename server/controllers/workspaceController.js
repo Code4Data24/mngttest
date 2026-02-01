@@ -1,5 +1,7 @@
 import prisma from "../configs/prisma.js";
 
+import prisma from "../configs/prisma.js";
+
 export const getUserWorkspaces = async (req, res) => {
   try {
     const userId = req.userId;
